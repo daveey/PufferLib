@@ -67,10 +67,14 @@ def make_policy(policy_cls, recurrent_cls=torch.nn.LSTM,
             # flat_logits[action,body] = [batch, action_dim]
             multi_categorical = [Categorical(logits=l) for l in flat_logits]
 
-            if action is None:
-                action = torch.stack([c.sample() for c in multi_categorical])
-            else:
-                action = action.view(-1, action.shape[-1]).T
+            try:
+                if action is None:
+                    action = torch.stack([c.sample() for c in multi_categorical])
+                else:
+                    action = action.view(-1, action.shape[-1]).T
+            except:
+                print(flat_logits)
+                raise RuntimeError('Error sampling action')
 
             logprob = torch.stack([c.log_prob(a) for c, a in zip(multi_categorical, action)]).T.sum(1)
             entropy = torch.stack([c.entropy() for c in multi_categorical]).T.sum(1)
