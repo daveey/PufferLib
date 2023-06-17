@@ -288,11 +288,11 @@ class CleanPuffeRL:
         mean_reward = float(torch.mean(data.rewards))
         self.writer.add_scalar("charts/reward", mean_reward, self.global_step)
 
-        for profile in self.buffers[buf].profile():
-            for k, v in profile.items():
-                # Added deltas to pufferlib.
-                # TODO: Test that this matches the original implementation.
-                self.writer.add_scalar(f'performance/env/{k}', np.mean(v.delta), self.global_step)
+        # for profile in self.buffers[buf].profile():
+        #     for k, v in profile.items():
+        #         # Added deltas to pufferlib.
+        #         # TODO: Test that this matches the original implementation.
+        #         self.writer.add_scalar(f'performance/env/{k}', np.mean(v.delta), self.global_step)
 
         uptime = timedelta(seconds=int(time.time() - self.start_time))
 
