@@ -226,7 +226,7 @@ class CleanPuffeRL:
                 if self.agent.is_recurrent:
                     action, logprob, _, value, data.next_lstm_state[buf] = agent.get_action_and_value(o.to(self.device), data.next_lstm_state[buf], data.next_done[buf])
                 else:
-                    action, logprob, _, value = agent.get_action_and_value(data.next_obs[buf].to(self.device))
+                    action, logprob, _, value = agent.get_action_and_value(o.to(self.device))
                 value = value.flatten()
             inference_time += time.time() - start
 
