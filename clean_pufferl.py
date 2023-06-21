@@ -1,8 +1,6 @@
 # PufferLib's customized CleanRL PPO + LSTM implementation
 # TODO: Testing, cleaned up metric/perf/mem logging
 
-from collections import defaultdict
-from logging import config
 from pdb import run, set_trace as T
 import os
 import psutil
@@ -18,7 +16,6 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 
 import pufferlib
 import pufferlib.emulation
