@@ -180,7 +180,6 @@ class CleanPuffeRL:
 
     @pufferlib.utils.profile
     def evaluate(self, agent, data):
-        self.init_writer({})
         allocated = torch.cuda.memory_allocated(self.device)
         ptr = env_step_time = inference_time = 0
 
@@ -254,7 +253,7 @@ class CleanPuffeRL:
                             continue
 
                         self.log_stats({f'charts/{name}': stat}, self.global_step)
-                        
+
         self.global_step += self.batch_size
         env_sps = int(self.batch_size / env_step_time)
         inference_sps = int(self.batch_size / inference_time)
