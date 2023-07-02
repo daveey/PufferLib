@@ -24,6 +24,8 @@ import pufferlib.utils
 import pufferlib.frameworks.cleanrl
 import pufferlib.vectorization.multiprocessing
 import pufferlib.vectorization.serial
+import pufferlib.policy_pool
+
 import wandb
 
 def unroll_nested_dict(d):
@@ -270,7 +272,7 @@ class CleanPuffeRL:
             for pol, agent_infos in i.items():
                 for agent_inf in agent_infos:
                     if not agent_inf:
-                        continue 
+                        continue
 
                     for name, stat in unroll_nested_dict(agent_inf):
                         try:

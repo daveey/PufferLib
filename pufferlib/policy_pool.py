@@ -48,7 +48,7 @@ class PolicyPoolRecord():
 # Maintains a pool of policies, and allows random sampling from the pool
 # based on the mean reward of each policy.
 class PolicyPool():
-    def __init__(self, evaluation_batch_size, policies=[], names=[], 
+    def __init__(self, evaluation_batch_size, policies=[], names=[],
             tenured=[], sample_weights=[], max_policies=1,
             path='pool', rank_update_scores=10, policy_update_scores=100,
             mu=1000, anchor_mu=1000, sigma=100/3):
@@ -61,7 +61,7 @@ class PolicyPool():
         self.num_scores = 0
         self.rank_update_scores = rank_update_scores
         self.policy_update_scores = policy_update_scores
-        
+
         self.mu = mu
         self.anchor_mu = anchor_mu
         self.sigma = sigma
@@ -104,10 +104,10 @@ class PolicyPool():
                     dones[samp])
             else:
                 atn, lgprob, _, val = policy.model.get_action_and_value(obs[samp])
-            
+
             returns.append((atn, lgprob, val, lstm_state))
             all_actions.append(atn)
-        
+
         return torch.cat(all_actions), self.sample_idxs, returns
 
     def load(self, path):
@@ -172,8 +172,8 @@ class PolicyPool():
             policy_infos[policy] += list(pol_infos)
             for i in pol_infos:
                 if key not in i:
-                    continue 
-            
+                    continue
+
                 self.scores[policy].append(i[key])
                 self.num_scores += 1
 
