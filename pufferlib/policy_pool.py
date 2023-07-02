@@ -96,7 +96,6 @@ class PolicyPool():
                 key = policy_keys[idx]
 
             policy = self.active_policies[key]
-            model = policy.model.to(obs.device)
             samp = self.sample_idxs[idx]
             if lstm_state is not None:
                 atn, lgprob, _, val, (lstm_state[0][:, samp], lstm_state[1][:, samp]) = policy.model.get_action_and_value(
@@ -104,7 +103,7 @@ class PolicyPool():
                     [lstm_state[0][:, samp], lstm_state[1][:, samp]],
                     dones[samp])
             else:
-                atn, lgprob, _, val = model.get_action_and_value(obs[samp])
+                atn, lgprob, _, val = policy.model.get_action_and_value(obs[samp])
 
             returns.append((atn, lgprob, val, lstm_state))
             all_actions.append(atn)
