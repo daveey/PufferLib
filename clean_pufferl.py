@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import torch.optim as optim
+from tqdm import tqdm
 
 import pufferlib
 import pufferlib.emulation
@@ -209,7 +210,7 @@ class CleanPuffeRL:
         stats = defaultdict(list)
         performance = defaultdict(list)
 
-        while True:
+        for ptr in tqdm(range(self.batch_size+2)):
             buf = data.buf
 
             step += 1
