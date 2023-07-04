@@ -294,8 +294,7 @@ class CleanPuffeRL:
         env_sps = int(self.batch_size / env_step_time)
         inference_sps = int(self.batch_size / inference_time)
 
-        if self.wandb_initialized:
-            wandb.log({
+        eval_stats = {
                 "performance/env_time": env_step_time,
                 "performance/env_sps": env_sps,
                 "performance/inference_time": inference_time,
@@ -305,12 +304,18 @@ class CleanPuffeRL:
                 "charts/reward": float(torch.mean(data.rewards)),
                 "agent_steps": self.global_step,
                 "global_step": self.global_step,
-            })
+            }
+
+        if self.wandb_initialized:
+            wandb.log(eval_stats)
 
         allocated_torch = torch.cuda.memory_allocated(self.device) - allocated_torch
         allocated_cpu = self.process.memory_info().rss - allocated_cpu
         if self.verbose:
             print('Allocated during evaluation - Pytorch: %.2f GB, System: %.2f GB' % (allocated_torch/1e9, allocated_cpu/1e9))
+            print('Evaluation Stats:')
+            for k, v in eval_stats.items():
+                print(f'\t{k}: {v}')
 
         uptime = timedelta(seconds=int(time.time() - self.start_time))
         print(
