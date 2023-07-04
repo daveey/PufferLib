@@ -202,6 +202,7 @@ class CleanPuffeRL:
 
     @pufferlib.utils.profile
     def evaluate(self, agent, data):
+
         allocated_torch = torch.cuda.memory_allocated(self.device)
         allocated_cpu = self.process.memory_info().rss
         ptr = env_step_time = inference_time = 0
@@ -210,7 +211,10 @@ class CleanPuffeRL:
         stats = defaultdict(list)
         performance = defaultdict(list)
 
-        for ptr in tqdm(range(self.batch_size+2)):
+        pbar = tqdm(total=self.batch_size,
+                    desc="Evaluating", position=0, leave=True)
+
+        while True:
             buf = data.buf
 
             step += 1
@@ -277,6 +281,7 @@ class CleanPuffeRL:
                     data.dones[ptr] = d[idx]
 
                 ptr += 1
+                pbar.update(1)
 
             # Log only for main learning policy
             for agent_i in i[0]:
@@ -290,11 +295,19 @@ class CleanPuffeRL:
                     except TypeError:
                         continue
 
+            pbar.set_description(" ".join[
+                f"Evaluating - ",
+                f"step={step} ",
+                f"env_sps={step/env_step_time:.2f} ",
+                f"inference_sps={step/inference_time:.2f} "
+            ])
+
         self.global_step += self.batch_size
         env_sps = int(self.batch_size / env_step_time)
         inference_sps = int(self.batch_size / inference_time)
 
-        eval_stats = {
+        if self.wandb_initialized:
+            wandb.log({
                 "performance/env_time": env_step_time,
                 "performance/env_sps": env_sps,
                 "performance/inference_time": inference_time,
@@ -304,25 +317,19 @@ class CleanPuffeRL:
                 "charts/reward": float(torch.mean(data.rewards)),
                 "agent_steps": self.global_step,
                 "global_step": self.global_step,
-            }
-
-        if self.wandb_initialized:
-            wandb.log(eval_stats)
+            })
 
         allocated_torch = torch.cuda.memory_allocated(self.device) - allocated_torch
         allocated_cpu = self.process.memory_info().rss - allocated_cpu
         if self.verbose:
             print('Allocated during evaluation - Pytorch: %.2f GB, System: %.2f GB' % (allocated_torch/1e9, allocated_cpu/1e9))
-            print('Evaluation Stats:')
-            for k, v in eval_stats.items():
-                print(f'\t{k}: {v}')
 
         uptime = timedelta(seconds=int(time.time() - self.start_time))
         print(
             f'Epoch: {self.update} - {self.global_step // 1000}K steps - {uptime} Elapsed\n'
             f'\tSteps Per Second: Env={env_sps}, Inference={inference_sps}'
         )
-
+        pbar.close()
         return data
 
     @pufferlib.utils.profile
