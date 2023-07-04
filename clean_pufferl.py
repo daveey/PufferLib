@@ -201,7 +201,7 @@ class CleanPuffeRL:
         return data
 
     @pufferlib.utils.profile
-    def evaluate(self, agent, data):
+    def evaluate(self, agent, data, show_progress_bar=False):
 
         allocated_torch = torch.cuda.memory_allocated(self.device)
         allocated_cpu = self.process.memory_info().rss
@@ -211,8 +211,10 @@ class CleanPuffeRL:
         stats = defaultdict(list)
         performance = defaultdict(list)
 
-        pbar = tqdm(total=self.batch_size,
-                    desc="Evaluating", position=0, leave=True)
+
+        if show_progress_bar:
+            progress_bar = tqdm(total=self.batch_size,
+                        desc="Evaluating", position=0, leave=True)
 
         while True:
             buf = data.buf
@@ -281,7 +283,8 @@ class CleanPuffeRL:
                     data.dones[ptr] = d[idx]
 
                 ptr += 1
-                pbar.update(1)
+                if show_progress_bar:
+                    progress_bar.update(1)
 
             # Log only for main learning policy
             for agent_i in i[0]:
@@ -295,13 +298,14 @@ class CleanPuffeRL:
                     except TypeError:
                         continue
 
-            pbar.set_description(" ".join([
-                f"Evaluating - ",
-                f"step={step} ",
-                f"agent_step={ptr} ",
-                f"env_sps={step/env_step_time:.2f} ",
-                f"inference_sps={step/inference_time:.2f} "
-            ]))
+            if show_progress_bar:
+                progress_bar.set_description(" ".join([
+                    f"Evaluating - ",
+                    f"step={step} ",
+                    f"agent_step={ptr} ",
+                    f"env_sps={step/env_step_time:.2f} ",
+                    f"inference_sps={step/inference_time:.2f} "
+                ]))
 
         self.global_step += self.batch_size
         env_sps = int(self.batch_size / env_step_time)
@@ -330,7 +334,7 @@ class CleanPuffeRL:
             f'Epoch: {self.update} - {self.global_step // 1000}K steps - {uptime} Elapsed\n'
             f'\tSteps Per Second: Env={env_sps}, Inference={inference_sps}'
         )
-        pbar.close()
+        progress_bar.close()
         return data
 
     @pufferlib.utils.profile
