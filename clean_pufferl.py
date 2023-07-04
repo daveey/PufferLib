@@ -295,12 +295,13 @@ class CleanPuffeRL:
                     except TypeError:
                         continue
 
-            pbar.set_description(" ".join[
+            pbar.set_description(" ".join([
                 f"Evaluating - ",
                 f"step={step} ",
+                f"agent_step={ptr} ",
                 f"env_sps={step/env_step_time:.2f} ",
                 f"inference_sps={step/inference_time:.2f} "
-            ])
+            ]))
 
         self.global_step += self.batch_size
         env_sps = int(self.batch_size / env_step_time)
