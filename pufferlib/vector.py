@@ -56,9 +56,7 @@ def joint_space(space, n):
     if isinstance(space, pufferlib.spaces.Discrete):
         return gymnasium.spaces.MultiDiscrete([space.n] * n)
     elif isinstance(space, pufferlib.spaces.MultiDiscrete):
-        return gymnasium.spaces.Box(low=0,
-            high=np.repeat(space.nvec[None] - 1, n, axis=0),
-            shape=(n, len(space)), dtype=space.dtype)
+        return gymnasium.spaces.MultiDiscrete(np.repeat(space.nvec[None], n, axis=0))
     elif isinstance(space, pufferlib.spaces.Box):
         return gymnasium.spaces.Box(
             low=np.repeat(space.low[None], n, axis=0),
@@ -102,7 +100,7 @@ class Native:
 
     def close(self):
         self.envs.close()
- 
+
 class Serial:
     reset = reset
     step = step
@@ -110,7 +108,7 @@ class Serial:
     @property
     def num_envs(self):
         return self.agents_per_batch
- 
+
     def __init__(self, env_creators, env_args, env_kwargs, num_envs, **kwargs):
         self.envs = [creator(*args, **kwargs) for (creator, args, kwargs)
             in zip(env_creators, env_args, env_kwargs)]
@@ -164,7 +162,7 @@ class Serial:
         infos = []
         for env, s in zip(self.envs, seed):
             ob, i = env.reset(seed=s)
-               
+
             if i:
                 infos.append(i)
 
@@ -262,7 +260,7 @@ class Multiprocessing:
     @property
     def num_envs(self):
         return self.agents_per_batch
- 
+
     def __init__(self, env_creators, env_args, env_kwargs,
             num_envs, num_workers=None, batch_size=None,
             zero_copy=True, **kwargs):
@@ -307,7 +305,7 @@ class Multiprocessing:
         self.single_action_space = driver_env.single_action_space
         self.action_space = joint_space(self.single_action_space, self.agents_per_batch)
         self.observation_space = joint_space(self.single_observation_space, self.agents_per_batch)
- 
+
         self.agent_ids = np.arange(num_agents).reshape(num_workers, agents_per_worker)
 
         from multiprocessing import RawArray
@@ -445,7 +443,7 @@ class Multiprocessing:
     def send(self, actions):
         actions = send_precheck(self, actions).reshape(self.atn_batch_shape)
         # TODO: What shape?
-        
+
         idxs = self.w_slice
         self.actions[idxs] = actions
         self.buf.semaphores[idxs] = STEP
@@ -509,7 +507,7 @@ class Ray():
         self.single_action_space = driver_env.single_action_space
         self.action_space = joint_space(self.single_action_space, self.agents_per_batch)
         self.observation_space = joint_space(self.single_observation_space, self.agents_per_batch)
- 
+
         self.agent_ids = np.arange(num_agents).reshape(num_workers, agents_per_worker)
 
         import ray
@@ -616,11 +614,11 @@ def make(env_creator_or_creators, env_args=None, env_kwargs=None, backend=Serial
             if batch_size is None:
                 batch_size = num_envs
 
-            #if batch_size % envs_per_worker != 0:
-            #    raise APIUsageError(
-            #        'batch_size must be divisible by (num_envs / num_workers)')
-        
- 
+            if batch_size % envs_per_worker != 0:
+                raise APIUsageError(
+                    'batch_size must be divisible by (num_envs / num_workers)')
+
+
     if env_args is None:
         env_args = []
 
@@ -660,7 +658,7 @@ def make(env_creator_or_creators, env_args=None, env_kwargs=None, backend=Serial
             raise APIUsageError(f'Invalid argument: {k}')
 
     # TODO: First step action space check
-    
+
     return backend(env_creators, env_args, env_kwargs, num_envs, **kwargs)
 
 def make_seeds(seed, num_envs):
@@ -693,8 +691,8 @@ def check_envs(envs, driver):
         if atn_space != driver_atn:
             raise APIUsageError(f'\n{atn_space}\n{driver_atn} atn space mismatch')
 
-def autotune(env_creator, batch_size, max_envs=384, model_forward_s=0.0,
-        max_env_ram_gb=32, max_batch_vram_gb=0.05, time_per_test=5): 
+def autotune(env_creator, batch_size, max_envs=1024, model_forward_s=0.0,
+        max_env_ram_gb=32, max_batch_vram_gb=0.05, time_per_test=5):
     '''Determine the optimal vectorization parameters for your system'''
     # TODO: fix multiagent
 
@@ -827,7 +825,7 @@ def autotune(env_creator, batch_size, max_envs=384, model_forward_s=0.0,
                 batch_size=batch_size,
                 backend=Multiprocessing,
             ))
-        
+
     # Strategy 4: Full sync - perhaps nichely useful
     for strategy_cores in range(num_cores, 1, -1):
         if batch_size % strategy_cores != 0:

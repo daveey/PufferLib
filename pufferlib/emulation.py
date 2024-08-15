@@ -112,8 +112,11 @@ def emulate_observation_space(space):
     return emulated_space, emulated_dtype
 
 def emulate_action_space(space):
-    if isinstance(space, (pufferlib.spaces.Discrete,
-            pufferlib.spaces.MultiDiscrete, pufferlib.spaces.Box)):
+    if isinstance(space, (
+        (pufferlib.spaces.Discrete,
+            pufferlib.spaces.MultiDiscrete, pufferlib.spaces.Box),
+        pufferlib.spaces.MultiDiscrete,
+    )):
         return space, space.dtype
 
     emulated_dtype = dtype_from_space(space)
@@ -191,9 +194,9 @@ class GymnasiumPufferEnv(gymnasium.Env):
             buf.terminals[0] = False
             buf.truncations[0] = False
             buf.masks[0] = True
- 
+
         return self.obs, info
- 
+
     def step(self, action):
         '''Execute an action and return (observation, reward, done, info)'''
         if not self.initialized:
@@ -223,8 +226,9 @@ class GymnasiumPufferEnv(gymnasium.Env):
             buf.terminals[0] = done
             buf.truncations[0] = truncated
             buf.masks[0] = True
-                   
-        self.done = done or truncated
+
+        self.done = done
+
         return self.obs, reward, done, truncated, info
 
     def render(self):
@@ -343,7 +347,7 @@ class PettingZooPufferEnv:
             buf.terminals[:] = False
             buf.truncations[:] = False
             buf.masks[:] = True
- 
+
         return self.dict_obs, info
 
     def step(self, actions):
@@ -401,7 +405,7 @@ class PettingZooPufferEnv:
                     buf.masks[i] = False
                 continue
 
-            ob = obs[agent] 
+            ob = obs[agent]
             self.mask[agent] = True
             self._emulate(ob, i, agent)
 
@@ -411,8 +415,8 @@ class PettingZooPufferEnv:
                 buf.terminals[i] = dones[agent]
                 buf.truncations[i] = truncateds[agent]
                 buf.masks[i] = True
-     
-        self.all_done = all(dones.values()) or all(truncateds.values())
+
+        self.all_done = all(dones.values())
         rewards = pad_agent_data(rewards, self.possible_agents, 0)
         dones = pad_agent_data(dones, self.possible_agents, True) # You changed this from false to match api test... is this correct?
         truncateds = pad_agent_data(truncateds, self.possible_agents, False)
@@ -428,7 +432,7 @@ class PettingZooPufferEnv:
 def pad_agent_data(data, agents, pad_value):
     return {agent: data[agent] if agent in data else pad_value
         for agent in agents}
- 
+
 def make_object(object_instance=None, object_creator=None, creator_args=[], creator_kwargs={}):
     if (object_instance is None) == (object_creator is None):
         raise ValueError('Exactly one of object_instance or object_creator must be provided')
@@ -441,7 +445,7 @@ def make_object(object_instance=None, object_creator=None, creator_args=[], crea
     if object_creator is not None:
         if not callable(object_creator):
             raise TypeError('object_creator must be a callable')
-        
+
         if creator_args is None:
             creator_args = []
 
@@ -460,7 +464,7 @@ def check_space(data, space):
     if not contains:
         raise exceptions.APIUsageError(
             f'Data:\n{data}\n not in space:\n{space}')
-    
+
     return True
 
 def _seed_and_reset(env, seed):
